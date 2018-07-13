@@ -11,6 +11,11 @@ git submodule sync
 git submodule init
 git submodule update
 
+if [ -z $RRL_INC ]; then
+  echo "Environment variable RRL_INC not found. Please set RRL_INC to the include directory of READEX Runtime Library (RRL)"
+  exit -1
+fi
+
 for d in */ ; do
    if ([ "$d" != "extern/" ]) && ([ "$d" != "scorep_plugin_common/" ]) ; then
 	echo "entering $d"
