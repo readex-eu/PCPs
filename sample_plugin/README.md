@@ -1,8 +1,8 @@
-#Score-P Tuning Plugin example
+# Score-P Tuning Plugin example
 
-##Compilation and Installation
+## Compilation and Installation
 
-###Prerequisites
+### Prerequisites
 
 To compile this plugin, you need:
 
@@ -10,7 +10,7 @@ To compile this plugin, you need:
 
 * Readex Runtime Library (RRL)
 
-###Building and installation
+### Building and installation
 
 1. Invoke CMake
 
@@ -39,15 +39,15 @@ The following settings are important:
 
 > Make sure to add the subfolder `lib` to your `LD_LIBRARY_PATH`.
 
-##Usage
+## Usage
 
 To add the tuing plugin you have to add `example` to the environment
 variable `SCOREP_TUNING_PLUGINS`.
 
 
-###Environment variables
+### Environment variables
 
-###If anything fails:
+### If anything fails:
 
 1. Check whether the plugin library can be loaded from the `LD_LIBRARY_PATH`.
 
@@ -55,6 +55,6 @@ variable `SCOREP_TUNING_PLUGINS`.
 
 3. Write a mail to the author.
 
-##Authors
+## Authors
 
 * Andreas Gocht (andreas.gocht at tu-dresden dot de)

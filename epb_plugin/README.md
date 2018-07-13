@@ -41,7 +41,7 @@ variable `SCOREP_TUNING_PLUGINS`.
     `VERBOSE`, `WARN` (default), `INFO`, `DEBUG`
     If set to any other value, WARN is used. Case in-sensitive.
 
-###If anything fails:
+### If anything fails:
 
 1. Check whether the plugin library can be loaded from the `LD_LIBRARY_PATH`.
 
@@ -49,6 +49,6 @@ variable `SCOREP_TUNING_PLUGINS`.
 
 3. Write a mail to the author.
 
-##Authors
+## Authors
 
 * Andreas Gocht (andreas.gocht at tu-dresden dot de)
