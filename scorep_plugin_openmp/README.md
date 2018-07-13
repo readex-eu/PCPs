@@ -7,40 +7,46 @@
 To compile this plugin, you need:
 
 * C compiler
+* libpthread
+* Readex Runtime Library (RRL)
 
-* `libpthread`
+### Building and installation
 
-* Score-P
+```
+mkdir BUILD && cd BUILD
+cmake ../
+make
+make install
+```
 
-###Building
+#### CMake settings
 
-1. Create build directory
+* `SCOREP_CONFIG` path to the scorep-config tool including the file name
+* `RRL_INC` path to the RRL include folder
+* `CMAKE_INSTALL_PREFIX` directory where the resulting plugin will be installed (lib/ suffix will be added)
+ 
+> *Note:*
+> If you have `scorep-config` in your `PATH`, it should be found by CMake.
 
-        mkdir build
-        cd build
+> Make sure to add the subfolder `lib` to your `LD_LIBRARY_PATH`.
 
-2. Invoke CMake
 
-        cmake ..
+### Usage
 
-2. Invoke make
+To add the tuing plugin you have to add `OpenMPTP` to the environment
+variable `SCOREP_RRL_PLUGINS`.
 
-        make
+Important variables:
 
-3. Copy it to a location listed in `LD_LIBRARY_PATH` or add current path to `LD_LIBRARY_PATH` with
-
-        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`pwd`
-
-##Usage
-
-This tuning plugin is used during runtime by sending tuning commands over the online access interface of Score-P. Normally, this plugin is used together
-with Periscope (http://periscope.in.tum.de/).
+* `SCOREP_TUNING_OpenMPTP_PLUGIN_VERBOSE` sets the plugin print mode. Possible values are `DEBUG`, `INFO`, `WARN`, `VERBOSE
 
 ###If anything fails
 
-Contact one of the authors.
+Please check whether the plugin library can be loaded from the `LD_LIBRARY_PATH`.
+If you have some logs please contact the Authors and attach the logs.
 
 ##Authors
 
-Robert Mijaković <mijakovi@in.tum.de>
-Michael Firbach <firbach@in.tum.de>
+Andreas Gocht (andreas.gocht at tu-dresden dot de)
+
+Robert Mijaković (mijakovi at in dot tum dot de)

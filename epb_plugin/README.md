@@ -1,51 +1,45 @@
-#Score-P Tuning Plugin example
+# Score-P Tuning Plugin example
 
-##Compilation and Installation
+## Compilation and Installation
 
-###Prerequisites
+### Prerequisites
 
 To compile this plugin, you need:
 
 * C11 compiler
+* Readex Runtime Library (RRL)
+* `x86_adapt`, see https://github.com/tud-zih-energy/x86_adapt
 
-* Score-P with RRL_TUNING_PLUGIN_VERSION 0
-    Currently this is just available in the Munich online access branch
-
-###Building and installation
-
-1. Invoke CMake
-
+### Building and installation
+       ```
         mkdir BUILD && cd BUILD
         cmake ../
-
-The following settings are important:
+        make
+        make install
+       ```
+### CMAKE settings
 
 * SCOREP_CONFIG                   path to the scorep-config tool including the file name
+* `RRL_INC`                       path to the RRL include folder
 * CMAKE_INSTALL_PREFIX            directory where the resulting plugin will be installed (lib/ suffix will be added)
 
-2. Invoke make
-
-        make
-
 > *Note:*
-
 > If you have `scorep-config` in your `PATH`, it should be found by CMake.
-
-3. Invoke make
-
-        make install
-
-> *Note:*
 
 > Make sure to add the subfolder `lib` to your `LD_LIBRARY_PATH`.
 
-##Usage
+## Usage
 
-To add the tuing plugin you have to add `example` to the environment
+To add the tuing plugin you have to add `epb_plugin` to the environment
 variable `SCOREP_TUNING_PLUGINS`.
 
 
-###Environment variables
+### Environment variables
+
+* `SCOREP_TUNING_EPB_PLUGIN_VERBOSE` 
+    Controls the output verbosity of the plugin. Possible values are:
+    `VERBOSE`, `WARN` (default), `INFO`, `DEBUG`
+    If set to any other value, WARN is used. Case in-sensitive.
 
 ###If anything fails:
 

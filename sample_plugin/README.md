@@ -8,8 +8,7 @@ To compile this plugin, you need:
 
 * C11 compiler
 
-* Score-P with SCOREP_TUNING_PLUGIN_VERSION 0
-    Currently this is just available in the Munich online access branch
+* Readex Runtime Library (RRL)
 
 ###Building and installation
 
@@ -21,6 +20,7 @@ To compile this plugin, you need:
 The following settings are important:
 
 * SCOREP_CONFIG                   path to the scorep-config tool including the file name
+* `RRL_INC`                       path to the RRL include folder
 * CMAKE_INSTALL_PREFIX            directory where the resulting plugin will be installed (lib/ suffix will be added)
 
 2. Invoke make

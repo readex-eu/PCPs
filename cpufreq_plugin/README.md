@@ -7,43 +7,28 @@
 To compile this plugin, you need:
 
 * C11 compiler
-
-* Score-P with RRL_TUNING_PLUGIN_VERSION 0
-    Currently this is just available in the Munich online access branch
-    
-* The cpufreq library
+* Readex Runtime Library (RRL)
 
 ### Building and installation
-
-1. Invoke CMake
 
 ```
 mkdir BUILD && cd BUILD
 cmake ..
+make
+make install
 ```
+
+### CMake settings
 
 The following settings are important:
 
 * SCOREP_CONFIG                   path to the scorep-config tool including the file name
+* `RRL_INC`                       path to the RRL include folder
 * CMAKE_INSTALL_PREFIX            directory where the resulting plugin will be installed (lib/ suffix will be added)
-
-2. Invoke make
-
-```
-make
-```
 
 
 > *Note:*
 > If you have `scorep-config` in your `PATH`, it should be found by CMake.
-
-3. Invoke make
-
-```
-make install
-```
-
-> *Note:*
 > Make sure to add the subfolder `lib` to your `LD_LIBRARY_PATH`.
 
 ## Usage
@@ -63,10 +48,9 @@ variable `SCOREP_TUNING_PLUGINS`.
 
 1. Check whether the plugin library can be loaded from the `LD_LIBRARY_PATH`.
 
-2. Check whether your cpufreq functionality is working properly by using the cpufreq command line tools.
-
 3. Write a mail to the author.
 
 ## Authors
 
 * Andreas Gocht (andreas.gocht at tu-dresden dot de)
+* Umbreen Sabir Mian (umbreen.mian at tu-dresden dot de)
