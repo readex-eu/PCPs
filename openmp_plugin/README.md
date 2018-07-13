@@ -1,8 +1,8 @@
-#Score-P OpenMP tuning plugin
+# Score-P OpenMP tuning plugin
 
-##Compilation and Installation
+## Compilation and Installation
 
-###Prerequisites
+### Prerequisites
 
 To compile this plugin, you need:
 
