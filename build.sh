@@ -17,12 +17,12 @@ if [ -z $RRL_INC ]; then
 fi
 
 for d in */ ; do
-   if ([ "$d" != "extern/" ]) && ([ "$d" != "scorep_plugin_common/" ]) ; then
+   if ([ "$d" != "extern/" ]) && ([ "$d" != "scorep_plugin_common/" ]) && ([ "$d" != "epb_plugin/" ]) ; then
 	echo "entering $d"
 	cd "$d"
 	mkdir -p build
 	cd build
-	cmake ../ -DCMAKE_INSTALL_PREFIX=$TRAGET_DIR
+	cmake ../ -DCMAKE_INSTALL_PREFIX=$TRAGET_DIR -DX86A_STATIC=OFF -DX86Adapt_STATIC=OFF
 	make
 	make install
 	cd ../../

@@ -8,7 +8,10 @@ To compile this plugin, you need:
 
 * C11 compiler
 * Readex Runtime Library (RRL)
-* `x86_adapt`, see https://github.com/tud-zih-energy/x86_adapt
+* One of the following interfaces is required to be able to do the Uncore Frequency tuning:
+    * `x86_adapt`, see https://github.com/tud-zih-energy/x86_adapt 
+    * `msr-safe`, see https://github.com/LLNL/msr-safe 
+    * `LIKWID`, see https://github.com/RRZE-HPC/likwid
 
 ### Building and installation
 

@@ -5,7 +5,6 @@
  */
 
 #define _GNU_SOURCE
-#include "uthash.h"
 #include <errno.h>
 #include <freqgen.h>
 #include <sched.h>
@@ -17,6 +16,7 @@
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "uthash.h"
 
 static freq_gen_interface_t *interface;
 static int available_devices;
@@ -129,6 +129,7 @@ void hash_add(struct settings *setting)
  */
 int32_t init()
 {
+    llog(LOG_DEBUG, "GIT revision: %s", GIT_REV);
     // some initialisation
     llog(LOG_VERBOSE, "UNCORE_FREQ tuning plugin: initializing\n");
 
@@ -172,9 +173,10 @@ int32_t init()
                 {
                     llog(LOG_WARN, "init device %d failed:", node);
                     llog(LOG_WARN,
-                        "Got error no: %d %s",
+                        "Got error no: %d %s %s",
                         devices[node],
-                        strerror(abs(devices[node])));
+                        strerror(abs(devices[node])),
+                        freq_gen_error_string() );
                     interface->finalize();
                     break;
                 }
@@ -190,7 +192,8 @@ int32_t init()
         }
         else
         {
-            llog(LOG_WARN, "No interface for UNCORE FREQ found");
+            llog(LOG_WARN, "No interface for UNCORE FREQ found. Last error: %s",
+                 freq_gen_error_string() );
             return -1;
         }
     }
@@ -218,7 +221,29 @@ int32_t init()
 
     pid_t tid;
     tid = syscall(SYS_gettid);
-    sched_getaffinity(tid, responsible_cpus_size, responsible_cpus);
+    int err = sched_getaffinity(tid, responsible_cpus_size, responsible_cpus);
+    if (err == -1)
+    {
+        llog(LOG_WARN, "sched_getaffinity failed: %s (%d)", strerror(errno), errno);
+
+        switch (errno)
+        {
+            case EFAULT:
+                llog(LOG_WARN, "EFAULT: A supplied memory address was invalid.");
+                break;
+            case EINVAL:
+                llog(LOG_WARN,
+                    "EFAULT: cpusetsize is smaller than the size of the affinity mask used by "
+                    "the kernel.");
+                break;
+            case ESRCH:
+                llog(LOG_WARN, "ESRCH: The thread whose ID is pid could not be found.");
+                break;
+            default:
+                llog(LOG_WARN, "Errorcode %d unkown in this context.", errno);
+        }
+        return -1;
+    }
 
     socket_owned = calloc(available_devices, sizeof(int));
     if (!socket_owned && available_devices != 0)
@@ -250,7 +275,8 @@ int32_t init()
         if (unc_freq < 0)
         {
             llog(LOG_WARN, "Could not get default max uncore frequency for node %d\n", node);
-            llog(LOG_WARN, "Got the error no: %lli %s \n", unc_freq, strerror(abs(unc_freq)));
+            llog(LOG_WARN, "Got the error no: %lli %s %s\n", unc_freq, strerror(abs(unc_freq)),
+                    freq_gen_error_string());
             return unc_freq;
         }
         else
@@ -278,8 +304,9 @@ int32_t init()
                 else
                 {
                     llog(LOG_WARN,
-                        "Could not prepare default max uncore frequency for node %d\n",
-                        node);
+                        "Could not prepare default max uncore frequency for node %d %s\n",
+                        node,
+                        freq_gen_error_string());
                 }
             }
             else
@@ -293,7 +320,8 @@ int32_t init()
             if (unc_freq < 0)
             {
                 llog(LOG_WARN, "Could not get min. uncore frequency for node %d\n", node);
-                llog(LOG_WARN, "Got the error no: %lli %s \n", unc_freq, strerror(abs(unc_freq)));
+                llog(LOG_WARN, "Got the error no: %lli %s %s\n", unc_freq, strerror(abs(unc_freq)),
+                        freq_gen_error_string());
                 return unc_freq;
             }
             else
@@ -330,8 +358,9 @@ int32_t init()
                     else
                     {
                         llog(LOG_WARN,
-                            "Could not prepare default min uncore frequency for node %d\n",
-                            node);
+                            "Could not prepare default min uncore frequency for node %d %s\n",
+                            node,
+                            freq_gen_error_string());
                     }
                 }
                 else
@@ -370,11 +399,36 @@ void create_location(RRL_LocationType location_type, uint32_t location_id)
         }
 
         CPU_ZERO_S(set_size, set);
-        sched_getaffinity(tid, set_size, set);
-        CPU_OR_S(responsible_cpus_size, responsible_cpus, set, responsible_cpus);
+        int err = sched_getaffinity(tid, set_size, set);
+        if (err == -1)
+        {
+            llog(LOG_WARN, "sched_getaffinity failed: %s (%d)", strerror(errno), errno);
+
+            switch (errno)
+            {
+                case EFAULT:
+                    llog(LOG_WARN, "EFAULT: A supplied memory address was invalid.");
+                    break;
+                case EINVAL:
+                    llog(LOG_WARN,
+                        "EFAULT: cpusetsize is smaller than the size of the affinity mask used by "
+                        "the kernel.");
+                    break;
+                case ESRCH:
+                    llog(LOG_WARN, "ESRCH: The thread whose ID is pid could not be found.");
+                    break;
+                default:
+                    llog(LOG_WARN, "Errorcode %d unkown in this context.", errno);
+            }
+        }
+        else
+        {
+            CPU_OR_S(responsible_cpus_size, responsible_cpus, set, responsible_cpus);
+            llog(LOG_DEBUG, "added new CPU");
+        }
 
         CPU_FREE(set);
-        llog(LOG_DEBUG, "added new CPU");
+
         int cpu = 0;
         for (cpu = 0; cpu < available_cores; cpu++)
         {
@@ -487,7 +541,6 @@ static int scorep_set_uncore_freq(int new_settings)
          */
         if (!check_fully_occupied || socket_owned[node])
         {
-
             if (new_settings != -1)
             {
                 freq_gen_setting_t generated_setting;
@@ -514,8 +567,9 @@ static int scorep_set_uncore_freq(int new_settings)
                     else
                     {
                         llog(LOG_WARN,
-                            "Could not prepare the new frequency setting to %lu",
-                            new_settings_);
+                            "Could not prepare the new frequency setting to %lu %s",
+                            new_settings_,
+                            freq_gen_error_string());
                         return -1;
                     }
                 }
@@ -527,7 +581,8 @@ static int scorep_set_uncore_freq(int new_settings)
                 if ((rt = interface->set_frequency(devices[node], generated_setting)) != 0)
                 {
                     llog(LOG_WARN, "Could not set uncore frequency for node %d\n", node);
-                    llog(LOG_WARN, "Got error no: %d %s\n", rt, strerror(rt));
+                    llog(LOG_WARN, "Got error no: %d %s %s\n", rt, strerror(rt),
+                            freq_gen_error_string());
                     return rt;
                 }
                 llog(LOG_INFO, "setting uncore frequency %lli (node: %d)\n", new_settings_, node);
@@ -558,12 +613,12 @@ static int scorep_set_uncore_freq(int new_settings)
                 {
                     llog(
                         LOG_WARN, "Could not set default max uncore frequency for node %d\n", node);
-                    llog(LOG_WARN, "Got error no: %d %s\n", rt, strerror(rt));
+                    llog(LOG_WARN, "Got error no: %d %s %s\n", rt, strerror(rt),
+                            freq_gen_error_string());
                     return rt;
                 }
                 else
                 {
-
                     llog(LOG_DEBUG,
                         "setting default max uncore frequency %lli (node: %d)\n",
                         default_max_freq[node],
@@ -591,12 +646,12 @@ static int scorep_set_uncore_freq(int new_settings)
                         llog(LOG_WARN,
                             "Could not set default min uncore frequency for node %d\n",
                             node);
-                        llog(LOG_WARN, "Got error no: %d %s\n", rt, strerror(rt));
+                        llog(LOG_WARN, "Got error no: %d %s %s\n", rt, strerror(rt),
+                                freq_gen_error_string());
                         return rt;
                     }
                     else
                     {
-
                         llog(LOG_INFO,
                             "setting default min uncore frequency %lli (node: %d)\n",
                             default_min_freq[node],
@@ -635,7 +690,8 @@ static int scorep_get_uncore_freq()
         if (unc_freq < 0)
         {
             llog(LOG_WARN, "Could not get uncore frequency for node %d\n", node);
-            llog(LOG_WARN, "Got error no: %lli %s\n", unc_freq, strerror(abs(unc_freq)));
+            llog(LOG_WARN, "Got error no: %lli %s %s\n", unc_freq, strerror(abs(unc_freq)),
+                    freq_gen_error_string());
         }
         else
         {

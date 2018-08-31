@@ -11,7 +11,11 @@ To compile the Parameter Control Plugins, you need:
 
 * C compiler
 * Readex Runtime Library (RRL)
-* `x86_adapt`, see https://github.com/tud-zih-energy/x86_adapt or msr-safe, see https://github.com/LLNL/msr-safe or LIKWID, see https://github.com/RRZE-HPC/likwid
+* One of the following interfaces is required to be able to do the CPU frequency and Uncore Frequency tuning:
+    * `x86_adapt`, see https://github.com/tud-zih-energy/x86_adapt 
+    * `msr-safe`, see https://github.com/LLNL/msr-safe 
+    * `LIKWID`, see https://github.com/RRZE-HPC/likwid
+    * `sysfs` Note: It only support CPU Frequency Scaling
 
 ### Required Environment variables
 

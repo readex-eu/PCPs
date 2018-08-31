@@ -5,7 +5,6 @@
  * @brief Tuning Plugin for CPU frequency tuning
  */
 #define _GNU_SOURCE
-#include "uthash.h"
 #include <errno.h>
 #include <freqgen.h>
 #include <sched.h>
@@ -18,6 +17,7 @@
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "uthash.h"
 
 #define MAX_SETTINGS 97
 #define PLUGIN_NAME "cpu_freq"
@@ -133,7 +133,8 @@ int init_responsible_cpus()
             if (devices[cpu] < 0)
             {
                 llog(LOG_WARN, "init cpu %d failed:", cpu);
-                llog(LOG_WARN, strerror(abs(devices[cpu])));
+                llog(LOG_WARN, "%s %s", strerror(abs(devices[cpu])),
+                        freq_gen_error_string());
                 CPU_CLR_S(cpu, responsible_cpus_size, responsible_cpus);
                 return devices[cpu];
             }
@@ -160,6 +161,7 @@ int init_responsible_cpus()
  */
 int32_t init()
 {
+    llog(LOG_DEBUG, "GIT revision: %s", GIT_REV);
     llog(LOG_VERBOSE, "CPU_FREQ tuning plugin: initializing");
 
     int init_device_done = 0;
@@ -168,12 +170,17 @@ int32_t init()
         interface = freq_gen_init(FREQ_GEN_DEVICE_CORE_FREQ);
         if (interface == NULL)
         {
-            llog(LOG_WARN, "No interface for CORE FREQ found");
+            llog(LOG_WARN, "No interface for CORE FREQ found. Last error: %s",
+                 freq_gen_error_string() );
             return -1;
         }
         llog(LOG_INFO, "Got the interface %s", interface->name);
         available_cores = interface->get_num_devices();
         llog(LOG_INFO, "got %u cpus", available_cores);
+        if (available_cores == 0)
+        {
+            return -errno;
+        }
 
         devices = calloc(available_cores, sizeof(int));
         if (!devices && available_cores != 0)
@@ -183,7 +190,7 @@ int32_t init()
         }
 
         // get inital responsible CPUS
-
+//        available_cores=152;
         responsible_cpus = CPU_ALLOC(available_cores);
         responsible_cpus_size = CPU_ALLOC_SIZE(available_cores);
 
@@ -194,7 +201,30 @@ int32_t init()
         }
 
         CPU_ZERO_S(responsible_cpus_size, responsible_cpus);
-        sched_getaffinity(getpid(), responsible_cpus_size, responsible_cpus);
+        int err = sched_getaffinity(getpid(), responsible_cpus_size, responsible_cpus);
+        if (err == -1)
+        {
+            llog(LOG_WARN, "sched_getaffinity failed: %s (%d)", strerror(errno), errno);
+
+            switch (errno)
+            {
+                case EFAULT:
+                    llog(LOG_WARN, "EFAULT: A supplied memory address was invalid.");
+                    break;
+                case EINVAL:
+                    llog(LOG_WARN,
+                        "EFAULT: cpusetsize is smaller than the size of the affinity mask used by "
+                        "the kernel.");
+                    break;
+                case ESRCH:
+                    llog(LOG_WARN, "ESRCH: The thread whose ID is pid could not be found.");
+                    break;
+                default:
+                    llog(LOG_WARN, "Errorcode %d unkown in this context.", errno);
+            }
+            return -1;
+        }
+
         init_device_done = init_responsible_cpus();
         if (init_device_done != 1)
         {
@@ -218,7 +248,8 @@ int32_t init()
             if (cpu_freq < 0)
             {
                 llog(LOG_WARN, "Error getting cpu freq for cpu %d", cpu);
-                llog(LOG_WARN, "Got error no: %lli %s\n", cpu_freq, strerror(abs(cpu_freq)));
+                llog(LOG_WARN, "Got error no: %lli %s %s\n", cpu_freq, strerror(abs(cpu_freq)),
+                        freq_gen_error_string());
             }
             else
             {
@@ -253,7 +284,8 @@ int32_t init()
         }
         else
         {
-            llog(LOG_WARN, "Could not prepare default core frequency to %lli\n", default_freq);
+            llog(LOG_WARN, "Could not prepare default core frequency to %lli %s\n", default_freq,
+                    freq_gen_error_string());
         }
     }
     else
@@ -285,7 +317,7 @@ static int scorep_set_cpu_freq(int new_settings)
     if (new_settings != -1)
     {
         struct settings *s = NULL;
-        llog(LOG_DEBUG, "setting freq to %lu", new_settings_);
+        llog(LOG_DEBUG, "setting freq to %lli", new_settings_);
         HASH_FIND_LLI(frequency_information_hashmap, &new_settings_, s);
         if (s == NULL)
         {
@@ -304,7 +336,9 @@ static int scorep_set_cpu_freq(int new_settings)
             }
             else
             {
-                llog(LOG_WARN, "Could not prepare the new frequency setting to %lu", new_settings_);
+                llog(
+                    LOG_WARN, "Could not prepare the new frequency setting to %lli %s", new_settings_,
+                    freq_gen_error_string());
                 return -1;
             }
         }
@@ -350,22 +384,25 @@ static int scorep_set_cpu_freq(int new_settings)
             {
                 switch (rt)
                 {
-                case -1:
-                    llog(LOG_WARN,
-                        "getting error setting frequency: not initialized (number: %d)",
-                        rt);
-                    break;
-                case -2:
-                    llog(LOG_WARN,
-                        "getting error setting frequency: invalid cpu selected "
-                        "(number: %d)",
-                        rt);
-                    break;
-                default:
-                    llog(LOG_WARN,
-                        "getting error setting frequency: unknown error (number: %d)",
-                        rt);
-                    break;
+                    case -1:
+                        llog(LOG_WARN,
+                            "getting error setting frequency: not initialized (number: %d) %s",
+                            rt,
+                            freq_gen_error_string());
+                        break;
+                    case -2:
+                        llog(LOG_WARN,
+                            "getting error setting frequency: invalid cpu selected "
+                            "(number: %d) %s",
+                            rt,
+                            freq_gen_error_string());
+                        break;
+                    default:
+                        llog(LOG_WARN,
+                            "getting error setting frequency: unknown error (number: %d) %s",
+                            rt,
+                            freq_gen_error_string());
+                        break;
                 }
             }
         }
@@ -389,7 +426,8 @@ static int scorep_get_cpu_freq()
             if (cpu_freq < 0)
             {
                 llog(LOG_DEBUG, "Error getting cpu freq for cpu %d", cpu);
-                llog(LOG_WARN, "Got error no: %lli %s\n", cpu_freq, strerror(abs(cpu_freq)));
+                llog(LOG_WARN, "Got error no: %lli %s %s\n", cpu_freq, strerror(abs(cpu_freq)),
+                        freq_gen_error_string());
             }
             else
             {
@@ -427,11 +465,36 @@ void create_location(RRL_LocationType location_type, uint32_t location_id)
             return;
         }
         CPU_ZERO_S(set_size, set);
-        sched_getaffinity(tid, set_size, set);
-        CPU_OR_S(responsible_cpus_size, responsible_cpus, set, responsible_cpus);
+        int err = sched_getaffinity(tid, set_size, set);
+        if (err == -1)
+        {
+            llog(LOG_WARN, "sched_getaffinity failed: %s (%d)", strerror(errno), errno);
+
+            switch (errno)
+            {
+                case EFAULT:
+                    llog(LOG_WARN, "EFAULT: A supplied memory address was invalid.");
+                    break;
+                case EINVAL:
+                    llog(LOG_WARN,
+                        "EFAULT: cpusetsize is smaller than the size of the affinity mask used by "
+                        "the kernel.");
+                    break;
+                case ESRCH:
+                    llog(LOG_WARN, "ESRCH: The thread whose ID is pid could not be found.");
+                    break;
+                default:
+                    llog(LOG_WARN, "Errorcode %d unkown in this context.", errno);
+            }
+        }
+        else
+        {
+            CPU_OR_S(responsible_cpus_size, responsible_cpus, set, responsible_cpus);
+            llog(LOG_DEBUG, "adding new CPU");
+        }
 
         CPU_FREE(set);
-        llog(LOG_DEBUG, "adding new CPU");
+
         int rt = init_responsible_cpus();
         if (rt == 0)
         {

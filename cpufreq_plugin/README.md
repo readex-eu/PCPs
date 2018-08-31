@@ -24,6 +24,11 @@ The following settings are important:
 
 * SCOREP_CONFIG                   path to the scorep-config tool including the file name
 * `RRL_INC`                       path to the RRL include folder
+* One of the following interfaces is required to be able to do the CPU frequency tuning:
+    * `x86_adapt`, see https://github.com/tud-zih-energy/x86_adapt 
+    * `msr-safe`, see https://github.com/LLNL/msr-safe 
+    * `LIKWID`, see https://github.com/RRZE-HPC/likwid
+    * `sysfs` 
 * CMAKE_INSTALL_PREFIX            directory where the resulting plugin will be installed (lib/ suffix will be added)
 
 
