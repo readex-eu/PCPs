@@ -88,7 +88,8 @@ void llog(log_level msg_level, const char *message_fmt, ...)
  */
 int32_t init()
 {
-    llog(LOG_DEBUG, "MPIT tuning plugin: initializing\n");
+    llog(LOG_DEBUG, "GIT revision: %s", GIT_REV);
+    llog(LOG_VERBOSE, "MPIT tuning plugin: initializing\n");
 
     mpi_value_ = new mpit_interface::mpit_values();
 

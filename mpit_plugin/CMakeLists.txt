@@ -21,7 +21,20 @@ set(SRC
     ${CMAKE_SOURCE_DIR}/mpit_plugin.cpp
     ${CMAKE_SOURCE_DIR}/mpit_interface.cpp
     )
+execute_process(
+  COMMAND git rev-parse HEAD
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_REV
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  RESULT_VARIABLE error
+  ERROR_VARIABLE error_msg
+)
+if (NOT ${error} EQUAL 0)
+    message(STATUS "can't retrive git hash, set to 0")
+    set(GIT_REV "0")
+endif()
 
 add_library(mpit_plugin SHARED ${SRC})
+target_compile_definitions(mpit_plugin PRIVATE GIT_REV="${GIT_REV}")
 
 install(TARGETS mpit_plugin LIBRARY DESTINATION lib)

@@ -95,6 +95,7 @@ void llog(log_level msg_level, const char *message_fmt, ...)
  */
 int32_t init()
 {
+    llog(LOG_DEBUG, "GIT revision: %s", GIT_REV);
     // some initialisation
     llog(LOG_VERBOSE, "UNCORE_FREQ tuning plugin: initializing\n");
     if (x86_adapt_init())

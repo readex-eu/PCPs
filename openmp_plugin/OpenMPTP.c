@@ -215,6 +215,7 @@ static rrl_tuning_action_info return_values[] = {
 
 int32_t init()
 {
+    llog(LOG_DEBUG, "GIT revision: %s", GIT_REV);
     llog(LOG_INFO, " Initializing");
     return 0;
 }
